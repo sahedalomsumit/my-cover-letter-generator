@@ -36,7 +36,7 @@ const PROFILE = {
 
 const CONFIG = {
   API_KEY: import.meta.env.VITE_API_KEY || '',
-  MODEL: 'gemini-3-pro-preview' // Corrected model name to valid version
+  MODELS: ['gemini-3-pro-preview', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemma-4-31b']
 };
 
 function App() {
@@ -121,52 +121,75 @@ ${PROFILE.voiceRules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
     const systemPrompt = buildSystemPrompt(tone);
     const userPrompt = `Job Post:\n${jobDesc}\n\n${extra ? `Context: ${extra}\n` : ""}Target length: ~${length} characters. Write the letter now:`;
 
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${CONFIG.API_KEY}`;
-      
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemPrompt }]
-          },
-          contents: [{ parts: [{ text: userPrompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1500,
+    let lastError = null;
+
+    // Try each model in sequence
+    for (const modelName of CONFIG.MODELS) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${CONFIG.API_KEY}`;
+        
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [{ text: systemPrompt }]
+            },
+            contents: [{ parts: [{ text: userPrompt }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 1500,
+            }
+          }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          const errorMessage = errData.error?.message || `Status ${response.status}`;
+          
+          // If it's a rate limit (429) or overload (503), try the next model
+          if (response.status === 429 || response.status === 503 || response.status === 500) {
+            console.warn(`Model ${modelName} failed (${response.status}). Trying next fallback...`);
+            lastError = new Error(`Model ${modelName} failed: ${errorMessage}`);
+            continue; 
           }
-        }),
-      });
+          
+          throw new Error(errorMessage);
+        }
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || `Gemini API Error: ${response.status}`);
+        const data = await response.json();
+        const letter = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+        if (!letter) throw new Error("Empty response from Gemini.");
+
+        setOutput(letter);
+        const newHistoryItem = {
+          letter,
+          tone,
+          length,
+          model: modelName,
+          jobSnippet: jobDesc.slice(0, 100),
+          timestamp: new Date().toISOString(),
+        };
+        
+        const updatedHistory = [newHistoryItem, ...history].slice(0, 20);
+        setHistory(updatedHistory);
+        localStorage.setItem('sahed_cl_history', JSON.stringify(updatedHistory));
+        
+        setIsLoading(false);
+        return; // Success! Exit the function
+
+      } catch (err) {
+        console.error(`Error with ${modelName}:`, err);
+        lastError = err;
+        // Continue to next model for any error that isn't handled above
+        continue;
       }
-
-      const data = await response.json();
-      const letter = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-      if (!letter) throw new Error("Empty response from Gemini.");
-
-      setOutput(letter);
-      const newHistoryItem = {
-        letter,
-        tone,
-        length,
-        jobSnippet: jobDesc.slice(0, 100),
-        timestamp: new Date().toISOString(),
-      };
-      
-      const updatedHistory = [newHistoryItem, ...history].slice(0, 20);
-      setHistory(updatedHistory);
-      localStorage.setItem('sahed_cl_history', JSON.stringify(updatedHistory));
-      
-    } catch (err) {
-      setError(err.message || "Failed to generate cover letter.");
-    } finally {
-      setIsLoading(false);
     }
+
+    // If we get here, all models failed
+    setError(lastError?.message || "All AI models failed to respond. Please check your API key or connection.");
+    setIsLoading(false);
   };
 
   const copyToClipboard = (text, e) => {
