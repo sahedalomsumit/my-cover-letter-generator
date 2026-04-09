@@ -1,43 +1,6 @@
 import { useState, useEffect } from 'react';
+import { PROFILE, CONFIG, TONE_GUIDES } from './data.js';
 
-const PROFILE = {
-  name: "Sahed Alom Sumit",
-  bio: "5+ years working with founders, brands, and agencies worldwide. I turn rough ideas into polished digital products. Work sits at the intersection of design thinking and full-stack development — I care about the vibe of a page as much as how fast it loads. Background in Business IT (Haaga-Helia University, Helsinki) — I understand the business side, not just aesthetics.",
-  stats: {
-    sitesBuilt: "150+",
-    experience: "5+ years",
-    fiverrStatus: "Level 2",
-    upworkJSS: "100%",
-  },
-  skills: {
-    design: ["Responsive Design", "Accessibility", "Prototyping", "Wireframing", "User Research"],
-    development: ["Webflow", "WordPress", "Figma", "React", "Node.js", "Tailwind CSS"],
-    aiAutomation: ["Claude Code", "Make.com", "n8n", "Zapier"],
-  },
-  portfolioProjects: [
-    { name: "TwinTwo", url: "https://www.twintwo.com/" },
-    { name: "Altshare", url: "https://altshare.com" },
-    { name: "Notifi", url: "https://getnotifi.com" },
-    { name: "Ovulio Baby", url: "https://ovulio-baby.com" },
-    { name: "Blue Water Wipes", url: "https://www.bluewaterwipes.com/" },
-  ],
-  voiceRules: [
-    "No 'Dear Hiring Manager' opener — ever",
-    "No buzzwords: no 'leverage', 'passionate about', 'synergy', 'dynamic', 'results-driven'",
-    "Short, active sentences. Get to the point fast.",
-    "First sentence must hook on something specific from the job post",
-    "Always reference 1-2 portfolio URLs that match the client's industry or tech stack",
-    "Platform-aware: Upwork letters are concise, direct, with a clear hook + CTA",
-    "End with a clear, low-friction call to action",
-    "Write like a real person, not a cover letter template",
-    "No fluff. Every sentence must earn its place.",
-  ],
-};
-
-const CONFIG = {
-  API_KEY: import.meta.env.VITE_API_KEY || '',
-  MODELS: ['gemini-3-pro-preview', 'gemini-2.5-flash-lite', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2-flash', 'gemini-2-flash-lite']
-};
 
 function App() {
   const [jobDesc, setJobDesc] = useState('');
@@ -62,22 +25,11 @@ function App() {
   }, []);
 
   const buildSystemPrompt = (selectedTone) => {
-    const toneGuides = {
-      friendly: "Approachable and warm. Like talking to a friend.",
-      professional: "Clean, confident, and direct. Competent and focused.",
-      formal: "Respectful and structured. No contractions.",
-      casual: "Relaxed and short. Like a quick message.",
-      polite: "Gracious and considerate of their time.",
-      persuasive: "Value-led and convincing. Clear proof points.",
-      informative: "Fact-focused. Skills and outcomes first.",
-      empathetic: "Problem-first. Show you heard their pain points.",
-      humorous: "Clever and lighthearted personality.",
-      serious: "No-nonsense and results-oriented."
-    };
+    const toneNote = TONE_GUIDES[selectedTone] || TONE_GUIDES["professional"];
 
-    const toneNote = toneGuides[selectedTone] || toneGuides["professional"];
-
-    return `You are writing a cover letter / proposal in the voice of Sahed Alom Sumit, a freelance web designer & developer based in Helsinki, Finland.
+    return `You are writing a cover letter / proposal in the voice of Sahed Alom Sumit.
+Title: ${PROFILE.title}
+Tagline: ${PROFILE.tagline}
 
 ## TONE INSTRUCTION
 ${toneNote}
@@ -85,18 +37,47 @@ ${toneNote}
 ## WHO SAHED IS
 ${PROFILE.bio}
 
+## SPECIALTIES
+${PROFILE.specialties.join(" · ")}
+
 ## STATS
 - ${PROFILE.stats.sitesBuilt} sites, ${PROFILE.stats.experience}
-- Upwork: ${PROFILE.stats.upworkJSS} JSS
+- Upwork: ${PROFILE.stats.upworkJSS}
 - Fiverr: ${PROFILE.stats.fiverrStatus}
 
 ## SKILLS
-Design: ${PROFILE.skills.design.join(", ")}
-Dev: ${PROFILE.skills.development.join(", ")}
-AI: ${PROFILE.skills.aiAutomation.join(", ")}
+- Design: ${PROFILE.skills.design.join(", ")}
+- Dev: ${PROFILE.skills.development.join(", ")}
+- AI/Automation: ${PROFILE.skills.aiAutomation.join(", ")}
 
-## PORTFOLIO
-${PROFILE.portfolioProjects.map(p => `- ${p.name}: ${p.url}`).join("\n")}
+## SERVICES
+${PROFILE.services.map(s => `- ${s.name}: ${s.desc}`).join("\n")}
+
+## EXPERIENCE
+${PROFILE.experience.map(e => `### ${e.role} @ ${e.company} (${e.period})\n${e.points.map(p => `- ${p}`).join("\n")}`).join("\n\n")}
+
+## EDUCATION & CERTS
+- ${PROFILE.education.degree} from ${PROFILE.education.institution}
+- Certs: ${PROFILE.certifications.map(c => c.name).join(", ")}
+
+## TESTIMONIALS
+${PROFILE.testimonials.map(t => `"${t.quote}" — ${t.author}, ${t.role || t.founder}`).join("\n")}
+
+## PORTFOLIO (Choose most relevant)
+Webflow:
+${PROFILE.portfolio.webflow.map(p => `- ${p.name}: ${p.url}`).join("\n")}
+
+WordPress:
+${PROFILE.portfolio.wordpress.map(p => `- ${p.name}: ${p.url}`).join("\n")}
+
+Framer:
+${PROFILE.portfolio.framer.map(p => `- ${p.name}: ${p.url}`).join("\n")}
+
+Filters/E-commerce:
+${PROFILE.portfolio.filters.map(p => `- ${p.name}: ${p.url}`).join("\n")}
+
+Others:
+${PROFILE.portfolio.others.map(p => `- ${p.name}: ${p.url}`).join("\n")}
 
 ## VOICE RULES
 ${PROFILE.voiceRules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
@@ -104,8 +85,9 @@ ${PROFILE.voiceRules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
 ## WHAT TO DO
 1. Hook on a specific detail from the job post in the first line.
 2. Show you understand their problem.
-3. Suggest 1-2 relevant portfolio links.
-4. Clean CTA. No fluff. No subject line.`;
+3. Suggest 2-3 most relevant portfolio links from the categories above.
+4. Clean CTA. No fluff. No subject line.
+5. Say Hey [Client Name] if you know it`;
   };
 
   const generateLetter = async () => {
@@ -263,7 +245,7 @@ ${PROFILE.voiceRules.map((r, i) => `${i + 1}. ${r}`).join("\n")}
                 backgroundPosition: 'right 14px center',
               }}
             >
-              {['friendly', 'professional', 'formal', 'casual', 'polite', 'persuasive', 'informative', 'empathetic', 'humorous', 'serious'].map(t => (
+              {Object.keys(TONE_GUIDES).map(t => (
                 <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
               ))}
             </select>
