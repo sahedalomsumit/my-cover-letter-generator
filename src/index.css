@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply bg-[#0c0c0e] text-[#f0f0f2] font-mono text-sm min-h-screen overflow-x-hidden;
+  }
+  /* Grid noise overlay */
+  body::before {
+    content: "";
+    @apply fixed inset-0 pointer-events-none z-0;
+    background-image:
+      linear-gradient(rgba(232, 245, 90, 0.015) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        rgba(232, 245, 90, 0.015) 1px,
+        transparent 1px
+      );
+    background-size: 40px 40px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-[#141416] border border-[#2a2a30] rounded-xl p-7 mb-4 relative z-10;
+  }
+  .input-field {
+    @apply w-full bg-[#1c1c20] border border-[#2a2a30] rounded-lg text-[#f0f0f2] font-mono text-sm p-3 outline-none transition-all focus:border-[#e8f55a] focus:ring-4 focus:ring-[#e8f55a]/10;
+  }
+  .label-text {
+    @apply block text-[11px] tracking-widest uppercase text-[#6b6b78] mb-2;
+  }
+  .btn-primary {
+    @apply w-full bg-[#e8f55a] text-[#0c0c0e] font-sans font-bold text-sm tracking-wide rounded-lg py-3.5 px-6 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-[#1c1c20] border border-[#2a2a30] text-[#6b6b78] font-mono text-[11px] tracking-wider py-1.5 px-3 rounded-md transition-all hover:border-[#e8f55a] hover:text-[#e8f55a];
+  }
+}
