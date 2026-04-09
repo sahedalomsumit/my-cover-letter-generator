@@ -36,7 +36,7 @@ const PROFILE = {
 
 const CONFIG = {
   API_KEY: import.meta.env.VITE_API_KEY || '',
-  MODEL: 'gemini-2.0-flash-lite' // Corrected model name to valid version
+  MODEL: 'gemini-3-pro-preview' // Corrected model name to valid version
 };
 
 function App() {
